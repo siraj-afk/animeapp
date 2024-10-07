@@ -1,7 +1,11 @@
+import 'package:animeapp/bloc/anime_bloc.dart';
+import 'package:animeapp/repositery/model/animemodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'Screen2.dart';
+
 class Screen1 extends StatefulWidget {
   const Screen1({super.key});
 
@@ -10,45 +14,67 @@ class Screen1 extends StatefulWidget {
 }
 
 class _Screen1State extends State<Screen1> {
+  late AnimeModel anime;
+
+  @override
+  void initState() {
+    BlocProvider.of<AnimeBloc>(context).add(FetchAnimeEvent());
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
- backgroundColor: Colors.white,
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: SafeArea(
           child: Padding(
-            padding:  EdgeInsets.only(left: 20.0.w,top: 10.h),
+            padding: EdgeInsets.only(left: 20.0.w, top: 10.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.menu,size: 24,),
-                    Text('FilmKu', style: TextStyle(
-                      color: Color(0xFF110E47),
-                      fontSize: 16,
-                      fontFamily: 'Merriweather',
-                      fontWeight: FontWeight.w900,
-                      height: 0,
-                      letterSpacing: 0.32,
-                    ),),
+                    Icon(
+                      Icons.menu,
+                      size: 24,
+                    ),
+                    Text(
+                      'FilmKu',
+                      style: TextStyle(
+                        color: Color(0xFF110E47),
+                        fontSize: 16,
+                        fontFamily: 'Merriweather',
+                        fontWeight: FontWeight.w900,
+                        height: 0,
+                        letterSpacing: 0.32,
+                      ),
+                    ),
                     Padding(
                       padding: EdgeInsets.only(right: 20.0.w),
-                      child: Icon(Icons.notifications,size: 24,),
+                      child: Icon(
+                        Icons.notifications,
+                        size: 24,
+                      ),
                     )
                   ],
                 ),
                 SizedBox(height: 30.h),
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Now Showing',  style: TextStyle(
-                      color: Color(0xFF110E46),
-                      fontSize: 16,
-                      fontFamily: 'Merriweather',
-                      fontWeight: FontWeight.w900,
-                      height: 0,
-                      letterSpacing: 0.32,
-                    ),),
+                    Text(
+                      'Now Showing',
+                      style: TextStyle(
+                        color: Color(0xFF110E46),
+                        fontSize: 16,
+                        fontFamily: 'Merriweather',
+                        fontWeight: FontWeight.w900,
+                        height: 0,
+                        letterSpacing: 0.32,
+                      ),
+                    ),
                     Padding(
                       padding: EdgeInsets.only(right: 20.0.w),
                       child: Container(
@@ -56,80 +82,130 @@ class _Screen1State extends State<Screen1> {
                         height: 21.h,
                         decoration: ShapeDecoration(
                           shape: RoundedRectangleBorder(
-                            side: BorderSide(width: 1, color: Color(0xFFE5E4EA)),
+                            side:
+                                BorderSide(width: 1, color: Color(0xFFE5E4EA)),
                             borderRadius: BorderRadius.circular(100),
                           ),
                         ),
                         child: Center(
-                          child: Text('See more', style: TextStyle(
-                            color: Color(0xFFAAA8B0),
-                            fontSize: 10,
-                            fontFamily: 'Mulish',
-                            fontWeight: FontWeight.w400,
-                            height: 0,
-                            letterSpacing: 0.20,
-                          ),),
+                          child: Text(
+                            'See more',
+                            style: TextStyle(
+                              color: Color(0xFFAAA8B0),
+                              fontSize: 10,
+                              fontFamily: 'Mulish',
+                              fontWeight: FontWeight.w400,
+                              height: 0,
+                              letterSpacing: 0.20,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20.h,),
-                SizedBox( height: 283.h,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                      itemCount: 3,
-                      itemBuilder: (context,position){
-                   return   GestureDetector(onTap: (){
-                     Navigator.of(context).push(MaterialPageRoute(builder: (_)=>Screen2()));
-                   },
-                     child: Container(
-                          width: 143.w,
-                          height: 283.h,
-                          child: Column(
-                            children: [
-                              Container(
+                SizedBox(
+                  height: 20.h,
+                ),
+                SizedBox(
+                  height: 283.h,
+                  child: BlocBuilder<AnimeBloc, AnimeState>(
+                    builder: (context, state) {
+                      if (state is AnimeblocLoading) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      if (state is AnimeblocError) {
+                        return RefreshIndicator(
+                            child: Text('error'),
+                            onRefresh: () async {
+                              return BlocProvider.of<AnimeBloc>(context)
+                                  .add(FetchAnimeEvent());
+                            });
+                      }
+                      if (state is AnimeblocLoaded) {
+                        anime = BlocProvider.of<AnimeBloc>(context).animeModel;
+                        return ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: anime.data!.length,
+                          itemBuilder: (context, position) {
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (_) => Screen2(image: anime.data![position].image.toString(),
+                                      title: anime.data![position].title.toString(),
+                                      synopsis: anime.data![position].synopsis.toString(),
+                                      genre: anime.data![position].genres!,)));
+                              },
+                              child: SingleChildScrollView(
+                                child: Container(
                                   width: 143.w,
-                                  height: 212.h,
-                                  child: Image.asset(fit: BoxFit.cover,'assets/img.png')),
-                              SizedBox(height: 5.h,),
-                              Text('Eternals',          style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 14,
-                                fontFamily: 'Mulish',
-                                fontWeight: FontWeight.w700,
-                                height: 0,
-                                letterSpacing: 0.28,
-                              ),),
-                              SizedBox(height: 5.h,),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.star,
-                                    color: Colors.yellow,
+                                  height: 290.h,
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                          width: 143.w,
+                                          height: 212.h,
+                                          child: Image.network(
+                                            anime.data![position].image
+                                                .toString(),
+                                            fit: BoxFit.cover,
+                                          )),
+                                      SizedBox(
+                                        height: 5.h,
+                                      ),
+                                      Text(
+                                        anime.data![position].title.toString(),
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 12,
+                                          fontFamily: 'Mulish',
+                                          fontWeight: FontWeight.w700,
+                                          height: 0,
+                                          letterSpacing: 0.28,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: 2.h,
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.star,
+                                            color: Colors.yellow,
+                                          ),
+                                          SizedBox(
+                                            width: 3.w,
+                                          ),
+                                          Text(
+                                            '9.1/10 IMDb',
+                                            style: TextStyle(
+                                              color: Color(0xFF9B9B9B),
+                                              fontSize: 12,
+                                              fontFamily: 'Mulish',
+                                              fontWeight: FontWeight.w400,
+                                              height: 0,
+                                              letterSpacing: 0.24,
+                                            ),
+                                          )
+                                        ],
+                                      )
+                                    ],
                                   ),
-                                  SizedBox(
-                                    width: 3.w,
-                                  ),
-                                  Text(
-                                    '9.1/10 IMDb',
-                                    style: TextStyle(
-                                      color: Color(0xFF9B9B9B),
-                                      fontSize: 12,
-                                      fontFamily: 'Mulish',
-                                      fontWeight: FontWeight.w400,
-                                      height: 0,
-                                      letterSpacing: 0.24,
-                                    ),
-                                  )
-                                ],
-                              )
-
-                            ],
-                          ),
-                        ),
-                   );
-                      }, separatorBuilder: (BuildContext context, int index) { return SizedBox(width: 10.w,); },),
+                                ),
+                              ),
+                            );
+                          },
+                          separatorBuilder: (BuildContext context, int index) {
+                            return SizedBox(
+                              width: 10.w,
+                            );
+                          },
+                        );
+                      } else {
+                        return SizedBox();
+                      }
+                    },
+                  ),
                 ),
                 SizedBox(
                   height: 10.h,
@@ -156,7 +232,7 @@ class _Screen1State extends State<Screen1> {
                         decoration: ShapeDecoration(
                           shape: RoundedRectangleBorder(
                             side:
-                            BorderSide(width: 1, color: Color(0xFFE5E4EA)),
+                                BorderSide(width: 1, color: Color(0xFFE5E4EA)),
                             borderRadius: BorderRadius.circular(100),
                           ),
                         ),
@@ -180,125 +256,180 @@ class _Screen1State extends State<Screen1> {
                 SizedBox(
                   height: 20.h,
                 ),
-                SizedBox(height: 400.h,
-                  child:  ListView.separated(
-                      itemCount: 4,
-                      itemBuilder: (context, index){
-                       return Container(
-                          width: 304.w,
-                          height: 120.h,
-                          child: Row(
-                            children: [
-                              Container(
-                                  width: 85,
-                                  height: 120,
-                                  child: Image.asset(fit: BoxFit.cover,'assets/img.png')),
-                              SizedBox(width: 10.w,),
-                              Column(crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Eternels',style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                    fontFamily: 'Mulish',
-                                    fontWeight: FontWeight.w700,
-                                    height: 0,
-                                    letterSpacing: 0.28,
-                                  ),),
-                                  SizedBox(
-                                    height: 3.h,
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.star,
-                                        color: Colors.yellow,
-                                      ),
-                                      SizedBox(
-                                        width: 3.w,
-                                      ),
-                                      Text(
-                                        '9.1/10 IMDb',
-                                        style: TextStyle(
-                                          color: Color(0xFF9B9B9B),
-                                          fontSize: 12,
-                                          fontFamily: 'Mulish',
-                                          fontWeight: FontWeight.w400,
-                                          height: 0,
-                                          letterSpacing: 0.24,
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  SizedBox(
-                                    height: 5.h,
-                                  ),
-                                  SizedBox(
-                                      height: 20.h,
-                                      width: 250.w,
-                                      child: ListView.builder(scrollDirection: Axis.horizontal,
-                                          itemCount: 3,
-                                          itemBuilder: (context,postion){
-                                        return Padding(
-                                          padding:  EdgeInsets.only(left: 10.0.w),
-                                          child: Container(
-                                            width: 41.w,
-                                            height: 25.h,
-                                            decoration: ShapeDecoration(
-                                              color: Color(0xFFDBE3FF),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                BorderRadius.circular(
-                                                    100),
-                                              ),
-                                            ),
-                                            child: Center(child: Text('Horror', style: TextStyle(
-                                              color: Color(0xFF87A3E8),
-                                              fontSize: 8,
+                SizedBox(
+                  height: 400.h,
+                  child: BlocBuilder<AnimeBloc, AnimeState>(
+                    builder: (context, state) {
+                      if (state is AnimeblocLoading) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      if (state is AnimeblocError) {
+                        return RefreshIndicator(
+                            child: Text('error'),
+                            onRefresh: () async {
+                              return BlocProvider.of<AnimeBloc>(context)
+                                  .add(FetchAnimeEvent());
+                            });
+                      }
+                      if (state is AnimeblocLoaded){
+                        anime = BlocProvider.of<AnimeBloc>(context).animeModel;
+                        return ListView.separated(
+                          itemCount: anime.data!.length,
+                          itemBuilder: (context, index) {
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => Screen2(image: anime.data![index].image.toString(),
+                                      title: anime.data![index].title.toString(),
+                                      synopsis: anime.data![index].synopsis.toString(),
+                                      genre: anime.data![index].genres!,)));
+                              },
+                              child: Container(
+                                width: 304.w,
+                                height: 120.h,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                        width: 85,
+                                        height: 120,
+                                        child: Image.network(
+                                            fit: BoxFit.cover,
+                                            anime.data![index].image.toString())),
+                                    SizedBox(
+                                      width: 10.w,
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                      children: [
+                                        SizedBox(
+                                          width: 250.w,
+                                          child: Text(
+                                            anime.data![index].title.toString(),
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 14,
                                               fontFamily: 'Mulish',
                                               fontWeight: FontWeight.w700,
                                               height: 0,
-                                              letterSpacing: 0.16,
-                                            ),)),
+                                              letterSpacing: 0.28,
+                                            ),
                                           ),
-                                        );
-
-                                      })),
-                                  SizedBox(
-                                    height: 5.h,
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.lock_clock,
-                                        color: Colors.black,
-                                      ),
-                                      SizedBox(
-                                        width: 3.w,
-                                      ),
-                                      Text(
-                                        '1h 47m',
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 12,
-                                          fontFamily: 'Mulish',
-                                          fontWeight: FontWeight.w400,
-                                          height: 0,
-                                          letterSpacing: 0.24,
                                         ),
-                                      )
-                                    ],
-                                  ),
-
-                                ],
-                              )
-                            ],
-                          ),
+                                        SizedBox(
+                                          height: 3.h,
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.star,
+                                              color: Colors.yellow,
+                                            ),
+                                            SizedBox(
+                                              width: 3.w,
+                                            ),
+                                            Text(
+                                              '9.1/10 IMDb',
+                                              style: TextStyle(
+                                                color: Color(0xFF9B9B9B),
+                                                fontSize: 12,
+                                                fontFamily: 'Mulish',
+                                                fontWeight: FontWeight.w400,
+                                                height: 0,
+                                                letterSpacing: 0.24,
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                        SizedBox(
+                                          height: 5.h,
+                                        ),
+                                        SizedBox(
+                                            height: 20.h,
+                                            width: 250.w,
+                                            child: ListView.builder(
+                                                scrollDirection: Axis.horizontal,
+                                                itemCount: anime
+                                                    .data![index].genres!.length,
+                                                itemBuilder: (context, postion) {
+                                                  return Padding(
+                                                    padding: EdgeInsets.only(
+                                                        left: 10.0.w),
+                                                    child: Container(
+                                                      width: 41.w,
+                                                      height: 25.h,
+                                                      decoration: ShapeDecoration(
+                                                        color: Color(0xFFDBE3FF),
+                                                        shape:
+                                                        RoundedRectangleBorder(
+                                                          borderRadius:
+                                                          BorderRadius
+                                                              .circular(100),
+                                                        ),
+                                                      ),
+                                                      child: Center(
+                                                          child: Text(
+                                                            anime.data![index]
+                                                                .genres![index]
+                                                                .toString(),
+                                                            style: TextStyle(
+                                                              color:
+                                                              Color(0xFF87A3E8),
+                                                              fontSize: 8,
+                                                              fontFamily: 'Mulish',
+                                                              fontWeight:
+                                                              FontWeight.w700,
+                                                              height: 0,
+                                                              letterSpacing: 0.16,
+                                                            ),
+                                                          )),
+                                                    ),
+                                                  );
+                                                })),
+                                        SizedBox(
+                                          height: 5.h,
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.lock_clock,
+                                              color: Colors.black,
+                                            ),
+                                            SizedBox(
+                                              width: 3.w,
+                                            ),
+                                            Text(
+                                              '1h 47m',
+                                              style: TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 12,
+                                                fontFamily: 'Mulish',
+                                                fontWeight: FontWeight.w400,
+                                                height: 0,
+                                                letterSpacing: 0.24,
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ],
+                                    )
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          separatorBuilder: (BuildContext context, int index) {
+                            return SizedBox(
+                              height: 20.h,
+                            );
+                          },
                         );
-
-                      }, separatorBuilder: (BuildContext context, int index) { return SizedBox(height: 20.h,); },),
+                      }else {
+                        return SizedBox();
+                      }
+                    },
+                  ),
                 )
-
-
               ],
             ),
           ),
