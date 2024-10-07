@@ -370,7 +370,7 @@ class _Screen1State extends State<Screen1> {
                                                       child: Center(
                                                           child: Text(
                                                             anime.data![index]
-                                                                .genres![index]
+                                                                .genres![postion]
                                                                 .toString(),
                                                             style: TextStyle(
                                                               color:
